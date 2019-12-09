@@ -27,8 +27,8 @@ const actions = {
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password }).then(response => {
         const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
+        commit('SET_TOKEN', data.jwt.access_token)
+        setToken(data.jwt.access_token)
         resolve()
       }).catch(error => {
         reject(error)
@@ -41,7 +41,7 @@ const actions = {
     return new Promise((resolve, reject) => {
       getInfo(state.token).then(response => {
         const { data } = response
-
+        console.log('get user info:', response)
         if (!data) {
           reject('Verification failed, please Login again.')
         }

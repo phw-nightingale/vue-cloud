@@ -7,7 +7,8 @@ import request from '@/utils/request'
  */
 export function list(path) {
   return request({
+    method: 'get',
     url: '/file-api/list',
-    data: { path }
+    params: { path }
   })
 }

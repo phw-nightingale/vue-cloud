@@ -1,7 +1,7 @@
 <template>
   <div class="file-item">
-    <svg-icon :icon-class="data.icon" class-name="svg-icon" />
-    <span class="svg-text ellipsis">{{ data.filename }}</span>
+    <svg-icon :icon-class="data.fileType" class-name="svg-icon" />
+    <span class="svg-text ellipsis">{{ data.fileName }}</span>
   </div>
 </template>
 
@@ -32,13 +32,15 @@ export default {
     flex-direction: column;
     align-items: center;
     margin: .5rem;
-    padding: .5rem 0;
+    padding: .5rem;
+    border-radius: 5px;
   }
 
   .file-item:hover {
     cursor: pointer;
     background-color: #99a9bf;
     color: white;
+    transition: all .2s ease-in-out;
   }
 
   .svg-icon {
@@ -49,6 +51,7 @@ export default {
   .svg-text {
     font-size: .75rem;
     text-align: center;
+    margin-top: .5rem;
   }
 
   .ellipsis {

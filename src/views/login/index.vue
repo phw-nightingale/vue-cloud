@@ -54,7 +54,6 @@
 
 <script>
 import { validUsername } from '@/utils/validate'
-import store from '@/store'
 
 export default {
   name: 'Login',
@@ -76,7 +75,7 @@ export default {
     return {
       loginForm: {
         username: 'admin',
-        password: '111111'
+        password: '199798'
       },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
@@ -113,10 +112,6 @@ export default {
           this.$store.dispatch('user/login', this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || '/' })
             this.loading = false
-          }).then(res => {
-            const data = res.data
-            store.getters.token = data.jwt.access_token
-            store.use = data.
           }).catch(() => {
             this.loading = false
           })
