@@ -105,3 +105,19 @@ export function param2Obj(url) {
       '"}'
   )
 }
+
+export function pathStack2Path(stack) {
+  let res = ''
+  if (stack.length === 1) {
+    res = '/'
+    return res
+  } else {
+    res = ''
+    stack.forEach(e => {
+      if (e.path !== '/') {
+        res = res + e.path
+      }
+    })
+  }
+  return res
+}

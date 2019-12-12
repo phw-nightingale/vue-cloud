@@ -31,14 +31,13 @@ export default {
   align-items: flex-end;
 }
 .nav-container > span {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: #303133;
   background-color: #ddd;
   margin: .25rem .25rem 0 .125rem;
   padding: .25rem;
   border-radius: .35rem;
-  font-weight: 400;
-  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  font-weight: bolder;
 }
 .nav-container > span:hover {
   cursor: pointer;

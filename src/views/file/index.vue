@@ -14,7 +14,7 @@
       >
         <el-button type="primary" icon="el-icon-upload">点击上传</el-button>
       </el-upload>
-      <el-button type="primary" icon="el-icon-folder-add" class="btn-folder-add">新建文件夹</el-button>
+      <el-button type="primary" icon="el-icon-folder-add" class="btn-folder-add" @click="handleNewFolder">新建文件夹</el-button>
       <file-nav-bar :data="pathStack" @fileNavBarItemClick="handleFileNavBarItemClick" />
     </el-row>
     <el-row class="item-container">
@@ -22,13 +22,36 @@
         <cloud-file v-loading.fullscreen.lock="fullscreenLoading" :data="item" @click.native="handleFileClick(item)" />
       </el-col>
     </el-row>
+    <!-- Download dialog -->
+    <el-dialog
+      :title="item.fileName"
+      :visible.sync="downloadDialogVisible"
+      width="30%"
+      center
+    >
+      <section class="dialog-content">
+        <div class="file-item">
+          <svg-icon :icon-class="item.fileType" class-name="svg-icon" />
+        </div>
+        <div class="file-details">
+          <section><span>文件名: </span>{{ item.fileName }}</section>
+          <section><span>文件大小: </span>{{ parseSize }}</section>
+          <section><span>上传时间: </span>{{ item.createTime }}</section>
+        </div>
+      </section>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="downloadDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleFileDownload">下 载</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import CloudFile from '@/components/Files'
 import FileNavBar from '@/components/FileNavBar'
-import { list } from '@/api/file'
+import { list, download, mkdir } from '@/api/file'
+import { pathStack2Path } from '@/utils'
 
 export default {
   components: {
@@ -38,7 +61,23 @@ export default {
     return {
       list: [],
       pathStack: [{ name: '/home', path: '/' }],
-      fullscreenLoading: false
+      fullscreenLoading: false,
+      downloadDialogVisible: false,
+      item: {}
+    }
+  },
+
+  computed: {
+    parseSize: function() {
+      const that = this
+      const byte = that.item.size
+      if (byte >= 1024 && byte < 1024 * 1024) {
+        return (byte / 1024).toFixed(2) + ' KB'
+      } else if (byte >= (1024 * 1024)) {
+        return (byte / (1024 * 1024)).toFixed(2) + ' MB'
+      } else {
+        return byte + ' Byte'
+      }
     }
   },
   created() {
@@ -62,7 +101,7 @@ export default {
       // goto path
       const that = this
       that.fullscreenLoading = true
-      console.log('Received click:', item)
+      // console.log('Received click:', item)
       if (item.fileType === 'folder') {
         // enter the folder
         that.fullscreenLoading = false
@@ -88,13 +127,42 @@ export default {
           })
           path.name = '/' + item.fileName
           that.pathStack.push(path)
-          console.log('add new path:', that.pathStack)
+          // console.log('add new path:', that.pathStack)
         }).catch(() => {
           that.fullscreenLoading = false
         })
       } else {
         // download files
+        console.log('file selected:', item)
+        that.fullscreenLoading = false
+        that.downloadDialogVisible = true
+        that.item = item
       }
+    },
+    handleFileDownload() {
+      const that = this
+      console.log('item being downloaded: ', that.item)
+      download(that.item)
+        .then(res => {
+          console.log('Downloaded success: ', res)
+          if (res.status !== 200) {
+            that.$alert('文件下载出错')
+            return false
+          }
+          // Download File
+          const url = window.URL.createObjectURL(new Blob([res.data]))
+          const link = document.createElement('a')
+          link.style.display = 'none'
+          link.href = url
+          link.setAttribute('download', that.item.fileName)
+          document.body.appendChild(link)
+          link.click()
+          that.downloadDialogVisible = false
+        })
+        .catch(err => {
+          console.log(err)
+          that.$alert(err)
+        })
     },
     handlePreview() {
       console.log('handle preview...')
@@ -109,7 +177,7 @@ export default {
       console.log('handle exceed...')
     },
     handleFileNavBarItemClick(data) {
-      console.log('handle file nav bar item click:', data)
+      // console.log('handle file nav bar item click:', data)
       const that = this
       that.fullscreenLoading = true
       list(data.item.path).then(res => {
@@ -118,6 +186,34 @@ export default {
         console.log(that.pathStack)
         that.fullscreenLoading = false
       }).catch(() => { that.fullscreenLoading = false })
+    },
+    handleNewFolder() {
+      const that = this
+      that.$prompt('请输入文件夹名', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /\S/,
+        inputErrorMessage: '文件夹名不能为空'
+      }).then(({ value }) => {
+        that.fullscreenLoading = true
+        console.log('current path is: ' + pathStack2Path(that.pathStack))
+        mkdir({ name: value, path: pathStack2Path(that.pathStack) }).then(res => {
+          console.log('mkdir success:', res.data)
+          that.list.push(res.data)
+          that.$message({
+            type: 'success',
+            message: '新建文件夹成功'
+          })
+          that.fullscreenLoading = false
+        }).catch(() => {
+          that.fullscreenLoading = false
+        })
+      }).catch(() => {
+        that.$message({
+          type: 'info',
+          message: '取消输入'
+        })
+      })
     }
   }
 }
@@ -145,5 +241,34 @@ export default {
   }
   .btn-folder-add {
     margin-right: .5rem;
+  }
+  .dialog-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .file-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: .5rem;
+    padding: .5rem;
+    border-radius: 5px;
+  }
+  .svg-icon {
+    width: 5rem;
+    height: 5rem;
+  }
+  .file-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .file-details > section {
+    margin: .5rem 0;
+    font-size: 1rem;
+  }
+  .file-details > section > span {
+    font-weight: bolder;
   }
 </style>
