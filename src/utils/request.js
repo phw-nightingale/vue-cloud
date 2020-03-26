@@ -15,7 +15,7 @@ service.interceptors.request.use(
   config => {
     // do something before request is sent
 
-    const data = new URLSearchParams()
+    const data = new FormData()
     if (config.data) {
       const old = config.data
       for (const prop in old) {
@@ -27,13 +27,13 @@ service.interceptors.request.use(
     if (config.url === '/user-api/login') {
       config.headers['Authorization'] = 'Basic YnJvd3NlcjoxOTk3OTg='
     }
-
     if (store.getters.token) {
       // let each request carry token
       // ['X-Token'] is a custom headers key
       // please modify it according to the actual situation
       config.headers['Authorization'] = 'Bearer ' + getToken()
     }
+    // console.log('current request config is: ', config)
     return config
   },
   error => {

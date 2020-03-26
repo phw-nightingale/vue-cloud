@@ -3,23 +3,20 @@
     <el-row class="tool-bar">
       <el-upload
         class="btn-upload"
-        action="http://localhost:8763/files"
-        :on-preview="handlePreview"
-        :on-remove="handleRemove"
-        :before-remove="beforeRemove"
-        :limit="1"
-        :on-exceed="handleExceed"
-        auto-upload
-        name="file"
+        action="/file-api/"
+        :on-change="handleFileChange"
+        :http-request="handleFileUpload"
+        :show-file-list="false"
       >
         <el-button type="primary" icon="el-icon-upload">点击上传</el-button>
       </el-upload>
       <el-button type="primary" icon="el-icon-folder-add" class="btn-folder-add" @click="handleNewFolder">新建文件夹</el-button>
+      <el-button type="danger" icon="el-icon-delete" class="btn-folder-add" style="margin-left: 0;" @click="handleRemove">删除文件</el-button>
       <file-nav-bar :data="pathStack" @fileNavBarItemClick="handleFileNavBarItemClick" />
     </el-row>
     <el-row class="item-container">
       <el-col v-for="(item, index) in list" :key="index" :xs="8" :sm="6" :md="4" :lg="3" :xl="2">
-        <cloud-file v-loading.fullscreen.lock="fullscreenLoading" :data="item" @click.native="handleFileClick(item)" />
+        <cloud-file v-loading.fullscreen.lock="fullscreenLoading" :data="item" @iconClick="handleFileClick" />
       </el-col>
     </el-row>
     <!-- Download dialog -->
@@ -50,7 +47,7 @@
 <script>
 import CloudFile from '@/components/Files'
 import FileNavBar from '@/components/FileNavBar'
-import { list, download, mkdir } from '@/api/file'
+import { list, download, mkdir, upload, remove } from '@/api/file'
 import { pathStack2Path } from '@/utils'
 
 export default {
@@ -63,7 +60,8 @@ export default {
       pathStack: [{ name: '/home', path: '/' }],
       fullscreenLoading: false,
       downloadDialogVisible: false,
-      item: {}
+      item: {},
+      upload: null
     }
   },
 
@@ -164,17 +162,24 @@ export default {
           that.$alert(err)
         })
     },
-    handlePreview() {
-      console.log('handle preview...')
+    handleFileChange(file) {
+      this.upload = file.raw
     },
-    handleRemove() {
-      console.log('handle remove...')
-    },
-    beforeRemove() {
-      console.log('before remove...')
-    },
-    handleExceed() {
-      console.log('handle exceed...')
+    handleFileUpload() {
+      const data = {}
+      const that = this
+      that.fullscreenLoading = true
+      data.file = this.upload
+      data.path = pathStack2Path(this.pathStack)
+      upload(data).then(res => {
+        console.log('upload successful: ', res)
+        that.fullscreenLoading = false
+        that.list.push(res.data)
+        that.$message({ type: 'success', message: res.msg })
+      }).catch(err => {
+        that.fullscreenLoading = false
+        that.$message(err)
+      })
     },
     handleFileNavBarItemClick(data) {
       // console.log('handle file nav bar item click:', data)
@@ -214,6 +219,29 @@ export default {
           message: '取消输入'
         })
       })
+    },
+    handleRemove() {
+      const that = this
+      let count = 0
+      that.list.forEach((e, idx) => {
+        if (e.checked && e.checked === true) {
+          console.log('Files will be removed: ', e.fileName)
+          that.fullscreenLoading = true
+          remove(e).then(res => {
+            console.log(res)
+            that.fullscreenLoading = false
+            that.$message(e.fileName + '删除完成')
+            that.list.splice(idx, 1)
+          }).catch(() => {
+            that.fullscreenLoading = false
+          })
+          count++
+        }
+      })
+      if (count === 0) {
+        that.fullscreenLoading = false
+        that.$message('请先选择文件或文件夹')
+      }
     }
   }
 }

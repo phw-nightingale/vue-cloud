@@ -44,3 +44,35 @@ export function mkdir(dir) {
     params: { path: dir.path }
   })
 }
+
+/**
+ * upload single file
+ * @param params
+ * @returns {AxiosPromise}
+ */
+export function upload(params) {
+  const config = {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    /**
+     * 此处必须添加这个配置，
+     * 为了防止文件数据被拦截器自动转换成Object，
+     * 否则会导致上传文件出现问题
+     */
+    transformRequest: [
+      function(data) {
+        return data
+      }
+    ]
+  }
+  return request.post('/file-api/upload', params, config)
+}
+
+export function remove(item) {
+  return request({
+    url: '/file-api/filename/' + item.fileName,
+    method: 'delete',
+    params: item
+  })
+}
