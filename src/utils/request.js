@@ -25,7 +25,7 @@ service.interceptors.request.use(
     }
 
     if (config.url === '/user-api/login') {
-      config.headers['Authorization'] = 'Basic YnJvd3NlcjoxOTk3OTg='
+      config.headers['ClientDetails'] = 'Basic YnJvd3NlcjoxOTk3OTg='
     }
     if (store.getters.token) {
       // let each request carry token
